@@ -7,6 +7,7 @@ const path = require('path')
 const fs = require('fs')
 const child_process = require('child_process')
 const webpack = require('webpack')
+const AutoDllPlugin = require('autodll-webpack-plugin')
 const createThemeColorReplacerPlugin = require('./src/config/plugin.config')
 
 const PROXY_TIMEOUT = 1000 * 60 * 2
@@ -94,6 +95,7 @@ module.exports = {
     const svgRule = config.module.rule('svg')
     svgRule.uses.clear()
     svgRule.include.add(resolve('./src/components/Icon'))
+    svgRule.include.add(resolve('./scope/assets'))
     svgRule
       .test(/\.svg$/)
       .use('svg-sprite-loader')
@@ -103,8 +105,8 @@ module.exports = {
       })
     const imagesRule = config.module.rule('images')
     imagesRule.exclude.add(resolve('./src/components/Icon'))
+    imagesRule.exclude.add(resolve('./scope/assets'))
     config.module.rule('images').test(/\.(png|jpe?g|gif|svg)(\?.*)?$/)
-    // 设置环境变量
     config.plugin('define').tap((definitions) => {
       definitions[0]['process.env'].VUE_APP_BUILDINFO = JSON.stringify(getBuildInfo())
       definitions[0]['process.env'].THEME_COLOR = JSON.stringify(process.env.THEME_COLOR)
@@ -112,6 +114,45 @@ module.exports = {
       definitions[0]['process.env'].BRAND = process.env.BRAND
       return definitions
     })
+
+    config
+      .plugin('autodll')
+      .use(new AutoDllPlugin({
+        inject: true, // 设为 true 就把 DLL bundles 插到 index.html 里
+        filename: '[name].[chunkhash].js',
+        context: path.resolve(__dirname), // AutoDllPlugin 的 context 必须和 package.json 的同级目录，要不然会链接失败
+        entry: {
+          vendor: [
+            'vue',
+            'vue-router',
+            'axios',
+            'vuex',
+            'moment',
+            'vue-i18n',
+            'codemirror',
+            'vxe-table',
+            'ramda',
+            'lodash',
+            'marked',
+            'clipboard',
+            'crypto-js',
+            'echarts',
+            'v-charts',
+            'xterm',
+            'jsrsasign',
+            'ajv',
+            'socket.io-client',
+            'ant-design-vue',
+            'vue-grid-layout',
+          ],
+        },
+      }))
+      .end()
+    if (process.env.analyzer_report) { // 是否开启打包分析
+      config
+        .plugin('webpack-bundle-analyzer')
+        .use(require('webpack-bundle-analyzer').BundleAnalyzerPlugin)
+    }
   },
   css: {
     loaderOptions: {
@@ -141,6 +182,10 @@ module.exports = {
         changeOrigin: true,
         proxyTimeout: PROXY_TIMEOUT,
       },
+    },
+    watchOptions: {
+      aggregateTimeout: 600, // 当第一个文件更改，会在重新构建前增加延迟。这个选项允许 webpack 将这段时间内进行的任何其他更改都聚合到一次重新构建里。以毫秒为单位q
+      ignored: [/.git/, /node_modules/],
     },
   }, devServerCoustomConfig),
 }

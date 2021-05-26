@@ -31,55 +31,25 @@
         </a-menu>
       </a-dropdown>
     </div>
-    <!-- 视图选择 -->
-    <div class="navbar-item d-flex align-items-center justify-content-end" v-if="systemProject || domainProject">
-      <a-dropdown :trigger="['click']">
-        <div class="navbar-item-trigger d-flex align-items-center justify-content-center">
-          <icon type="navbar-view-switch" />
-          <span class="ml-2">{{ viewLabel }}</span>
-          <icon type="caret-down" style="font-size: 24px; line-height: normal;" />
-        </div>
-        <a-menu slot="overlay" @click="projectChange">
-          <a-menu-item scope="project" :key="`${projects[0].id}$$project$$${true}`">
-            <a-radio :checked="scope === 'project'" />{{ $t('scope.text_253', [$t('dictionary.project')]) }}
-          </a-menu-item>
-          <template v-if="systemProject || domainProject">
-            <template v-if="!systemProject && domainProject">
-              <a-menu-item scope="domain" :key="`${domainProject.id}$$domain`">
-                <a-radio :checked="scope === 'domain'" />{{ $t('navbar.view.domain_manager') }}
-              </a-menu-item>
-            </template>
-            <template v-else>
-              <a-menu-item scope="system" :key="`${systemProject.id}$$system`">
-                <a-radio :checked="scope === 'system'" />{{ $t('navbar.view.system_manager') }}
-              </a-menu-item>
-            </template>
-          </template>
-        </a-menu>
-      </a-dropdown>
-    </div>
-    <!-- 项目选择 -->
-    <div class="navbar-item d-flex align-items-center justify-content-end" v-if="scope ==='project'">
-      <a-dropdown :trigger="['click']">
-        <div class="navbar-item-trigger d-flex align-items-center justify-content-center">
-          <icon type="navbar-project" />
-          <span class="ml-2">{{ userInfo.projectName }}</span>
-          <icon type="caret-down" style="font-size: 24px; line-height: normal;" />
-        </div>
-        <a-menu slot="overlay" @click="projectChange">
-          <a-menu-item v-for="item of projects" :key="`${item.id}$$project`">
-            <a-radio :checked="item.id === userInfo.projectId" />{{ item.name }}
-          </a-menu-item>
-        </a-menu>
-      </a-dropdown>
-    </div>
+    <cloud-shell class="navbar-item-icon primary-color-hover" />
     <div class="navbar-item">
       <a-dropdown :trigger="['click']">
         <div class="navbar-item-trigger d-flex align-items-center justify-content-center">
           <icon type="navbar-user" style="font-size: 24px;" />
         </div>
         <a-menu slot="overlay" @click="userMenuClick">
-          <a-menu-item key="logout">{{ $t('scope.text_6') }}</a-menu-item>
+          <a-sub-menu key="language">
+            <span slot="title"><a-icon class="mr-2 ml-2" type="global" /><span>{{$t('common_630')}}</span></span>
+            <a-menu-item key="3" @click="settingLanguageCH">
+              <span class="mr-2" style="cursor: pointer">简体中文</span><a-icon v-show="language === 'zh-CN'" type="check-circle" theme="twoTone" twoToneColor="#52c41a" />
+            </a-menu-item>
+            <a-menu-item key="4" @click="settingLanguageEN">
+              <span class="mr-2" style="cursor: pointer">English</span><a-icon v-show="language === 'en'" type="check-circle" theme="twoTone" twoToneColor="#52c41a" />
+            </a-menu-item>
+          </a-sub-menu>
+          <a-menu-item key="toClouduser"><a-icon class="mr-2 ml-2" type="cloud-upload" />{{ $t('scope.cloudid') }}</a-menu-item>
+          <a-menu-item key="handleUpdatePassword"><a-icon class="mr-2 ml-2" type="usergroup-delete" />{{ $t('scope.text_5') }}</a-menu-item>
+          <a-menu-item key="logout"><a-icon class="mr-2 ml-2" type="logout" />{{ $t('scope.text_6') }}</a-menu-item>
         </a-menu>
       </a-dropdown>
     </div>
@@ -90,11 +60,18 @@
 import get from 'lodash/get'
 import * as R from 'ramda'
 import { mapGetters } from 'vuex'
+import { setLanguage } from '@/utils/common/cookie'
+import CloudShell from '@/sections/Navbar/components/CloudShell'
+import WindowsMixin from '@/mixins/windows'
 
 export default {
   name: 'Navbar',
+  components: {
+    CloudShell,
+  },
+  mixins: [WindowsMixin],
   computed: {
-    ...mapGetters(['userInfo', 'scope', 'logo', 'permission', 'scopeResource']),
+    ...mapGetters(['userInfo', 'scope', 'logo', 'permission', 'scopeResource', 'setting']),
     products () {
       if (this.userInfo.menus && this.userInfo.menus.length > 0) {
         const menus = this.userInfo.menus.map(item => {
@@ -132,6 +109,9 @@ export default {
     authInfoLoaded () {
       return !!this.userInfo.roles && !!this.permission && !!this.scopeResource
     },
+    language () {
+      return this.setting.language
+    },
   },
   methods: {
     async userMenuClick (item) {
@@ -142,6 +122,10 @@ export default {
         } catch (error) {
           throw error
         }
+      } else if (item.key === 'handleUpdatePassword') {
+        this.createDialog('UpdateUserPasswordDialog')
+      } else if (item.key === 'toClouduser') {
+        this.$router.push('/clouduser')
       }
     },
     projectChange (item) {
@@ -203,6 +187,14 @@ export default {
         },
       })
     },
+    settingLanguageCH () {
+      setLanguage('zh-CN')
+      window.location.reload()
+    },
+    settingLanguageEN () {
+      setLanguage('en')
+      window.location.reload()
+    },
   },
 }
 </script>
@@ -223,6 +215,12 @@ export default {
 .navbar-item {
   height: 100%;
   border-left: 1px solid #f5f5f5;
+}
+.navbar-item-icon {
+  width: 40px;
+  height: 40px;
+  margin-left: 5px;
+  margin-right: 5px;
 }
 .navbar-item-trigger {
   height: 100%;

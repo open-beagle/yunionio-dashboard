@@ -15,7 +15,7 @@ sync(){
     echo 
     cd $currentPath/$path 
     git fetch origin && \
-    git rebase origin/$branch && \
+    git pull origin $branch && \
     # 不显示输出
     cd - 2>&1 >/dev/null && \
     echo "\033[32m [$moduleName] rebase 完成 \033[0m"
@@ -31,9 +31,9 @@ sync 'dashboard-module-compute' ../containers/Compute
 sync 'dashboard-module-dashboard' ../containers/Dashboard
 sync 'dashboard-module-network' ../containers/Network
 sync 'dashboard-module-storage' ../containers/Storage
-# sync 'dashboard-module-k8s' ../containers/K8S
-# sync 'dashboard-module-helm' ../containers/Helm
-# sync 'dashboard-module-db' ../containers/DB
+sync 'dashboard-module-k8s' ../containers/K8S
+sync 'dashboard-module-helm' ../containers/Helm
+sync 'dashboard-module-db' ../containers/DB
 sync 'dashboard-module-monitor' ../containers/Monitor
 
 exit 0
