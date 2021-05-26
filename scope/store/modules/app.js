@@ -1,9 +1,9 @@
-const logo = require('@scope/images/onecloud.svg')
+const logo = require('@scope/bimages/favicon.svg')
 
 export default {
   state: {
     companyInfo: {
-      copyright: 'Made with ❤ Yunion',
+      copyright: 'Power By Beagle Team 2018-2021',
       logo,
       loginLogo: logo,
       name: 'OneCloud',
